@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="claro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Produção · Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <style>
+    :root, [data-theme="claro"] {
+      --bg: #f3f2ef;
+      --bg-elev: #fafaf8;
+      --ink: #1c1c1a;
+      --muted: #6b6a66;
+      --line: #dddcd6;
+      --soft: #e8e7e1;
+      --accent: #2a2a28;
+      --chip: #efeee9;
+      --shadow: 0 1px 0 rgba(28,28,26,.04), 0 12px 32px rgba(28,28,26,.05);
+      --chart-1: #1c1c1a;
+      --chart-2: #6b6a66;
+      --chart-3: #a8a79f;
+      --chart-4: #d2d1cb;
+      --radius: 14px;
+      --pad: 20px;
+      --chart-h: 240px;
+    }
+    [data-theme="escuro"] {
+      --bg: #141413;
+      --bg-elev: #1c1c1a;
+      --ink: #f0efe9;
+      --muted: #9c9b94;
+      --line: #2e2e2b;
+      --soft: #242422;
+      --accent: #f0efe9;
+      --chip: #242422;
+      --shadow: 0 1px 0 rgba(0,0,0,.2), 0 16px 40px rgba(0,0,0,.35);
+      --chart-1: #f0efe9;
+      --chart-2: #bdbcb4;
+      --chart-3: #7a7870;
+      --chart-4: #3f3f3b;
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: "DM Sans", system-ui, sans-serif;
+      background:
+        radial-gradient(1200px 500px at 10% -10%, color-mix(in srgb, var(--soft) 80%, transparent), transparent 60%),
+        radial-gradient(900px 400px at 100% 0%, color-mix(in srgb, var(--line) 55%, transparent), transparent 55%),
+        var(--bg);
+      color: var(--ink);
+      letter-spacing: -0.01em;
+    }
+    .wrap { max-width: 1240px; margin: 0 auto; padding: 28px var(--pad) 56px; }
+    header {
+      display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end;
+      justify-content: space-between; margin-bottom: 22px;
+    }
+    .brand h1 {
+      font-family: "Instrument Serif", Georgia, serif;
+      font-weight: 400; font-size: clamp(1.85rem, 6vw, 2.75rem);
+      margin: 0; line-height: 1.05; letter-spacing: -0.02em;
+    }
+    .brand p { margin: 8px 0 0; color: var(--muted); font-size: .9rem; line-height: 1.35; }
+    .controls {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+      width: 100%;
+    }
+    .seg {
+      display: flex; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
+      scrollbar-width: none; background: var(--bg-elev); border: 1px solid var(--line);
+      border-radius: 999px; padding: 4px; box-shadow: var(--shadow); gap: 2px;
+    }
+    .seg::-webkit-scrollbar { display: none; }
+    .seg button, .theme-btn, select, .ghost {
+      appearance: none; border: 0; background: transparent; color: var(--muted);
+      font: inherit; cursor: pointer; padding: 10px 14px; border-radius: 999px;
+      white-space: nowrap; min-height: 42px;
+    }
+    .seg button { flex: 1 0 auto; }
+    .seg button.active { background: var(--accent); color: var(--bg); }
+    .theme-btn, .ghost {
+      border: 1px solid var(--line); background: var(--bg-elev); color: var(--ink);
+      box-shadow: var(--shadow); margin-left: auto;
+    }
+    .filters {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px; margin-bottom: 18px;
+    }
+    label.field {
+      display: flex; flex-direction: column; gap: 6px;
+      font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em;
+    }
+    label.field select, label.field input {
+      border: 1px solid var(--line); background: var(--bg-elev); color: var(--ink);
+      border-radius: 10px; padding: 12px; font: inherit; text-transform: none; letter-spacing: 0;
+      min-height: 44px; width: 100%; font-size: 16px;
+    }
+    .kpis {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px; margin-bottom: 14px;
+    }
+    @media (min-width: 800px) {
+      .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .controls { width: auto; }
+      .seg { width: auto; display: inline-flex; }
+      .seg button { flex: 0 0 auto; }
+    }
+    .kpi {
+      background: var(--bg-elev); border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 14px 14px; box-shadow: var(--shadow); min-width: 0;
+    }
+    .kpi .lbl { color: var(--muted); font-size: .75rem; margin-bottom: 6px; }
+    .kpi .val {
+      font-family: "Instrument Serif", Georgia, serif;
+      font-size: clamp(1.45rem, 5vw, 2rem); line-height: 1.05; letter-spacing: -0.02em;
+      word-break: break-word;
+    }
+    .kpi .sub { margin-top: 6px; color: var(--muted); font-size: .78rem; }
+    .grid {
+      display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px;
+    }
+    @media (min-width: 900px) {
+      .grid { grid-template-columns: 1.4fr 1fr; gap: 14px; margin-bottom: 14px; }
+    }
+    .card {
+      background: var(--bg-elev); border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 16px; box-shadow: var(--shadow); min-height: 0;
+    }
+    .card h2 {
+      margin: 0 0 12px; font-size: .92rem; font-weight: 600;
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px;
+    }
+    .card h2 span { color: var(--muted); font-weight: 400; font-size: .78rem; }
+    .chart-box { position: relative; height: var(--chart-h); width: 100%; }
+    .rank { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+    .rank li {
+      display: grid; grid-template-columns: 28px minmax(0,1fr) auto; gap: 10px; align-items: center;
+    }
+    .rank .n {
+      width: 28px; height: 28px; border-radius: 8px; background: var(--chip);
+      display: grid; place-items: center; font-size: .8rem; color: var(--muted);
+    }
+    .rank .bar-wrap { height: 8px; background: var(--soft); border-radius: 99px; overflow: hidden; margin-top: 6px; }
+    .rank .bar { height: 100%; background: var(--accent); border-radius: 99px; }
+    .rank .name { font-size: .9rem; overflow-wrap: anywhere; }
+    .rank .qty { font-variant-numeric: tabular-nums; color: var(--muted); font-size: .85rem; }
+    .table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: .84rem; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); font-weight: 500; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
+    td { font-variant-numeric: tabular-nums; }
+    .scroll { max-height: 340px; overflow: auto; }
+    .pill {
+      display: inline-flex; align-items: center; padding: 4px 9px; border-radius: 999px;
+      background: var(--chip); color: var(--ink); font-size: .75rem; white-space: nowrap;
+    }
+    .status-ok { background: color-mix(in srgb, var(--ink) 12%, transparent); }
+    .status-wait { background: color-mix(in srgb, var(--muted) 18%, transparent); color: var(--muted); }
+    .status-prod { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+    .empty, .loading { padding: 40px 16px; text-align: center; color: var(--muted); }
+    footer { margin-top: 24px; color: var(--muted); font-size: .8rem; line-height: 1.4; }
+    .page { display: none; }
+    .page.active { display: block; animation: in .35s ease; }
+    @keyframes in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+    @media (max-width: 640px) {
+      :root { --pad: 14px; --chart-h: 210px; --radius: 12px; }
+      .wrap { padding: 16px var(--pad) 40px; }
+      header { margin-bottom: 16px; gap: 12px; }
+      .brand p { font-size: .82rem; }
+      .filters { grid-template-columns: 1fr 1fr; }
+      .filters .field:last-child { grid-column: 1 / -1; }
+      .card { padding: 14px; }
+      .chart-box { height: 200px; }
+      .kpi { padding: 12px; }
+      footer { font-size: .75rem; }
+    }
+    @media (max-width: 380px) {
+      .filters { grid-template-columns: 1fr; }
+      .kpis { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <h1>Produção</h1>
+        <p id="meta">Carregando base do Excel…</p>
+      </div>
+      <div class="controls">
+        <div class="seg" id="nav">
+          <button type="button" data-page="resumo" class="active">Resumo</button>
+          <button type="button" data-page="corte">Corte</button>
+          <button type="button" data-page="revisao">Revisão</button>
+          <button type="button" data-page="costura">Costura</button>
+        </div>
+        <button type="button" class="theme-btn" id="themeBtn" title="Alternar tema">Tema: Claro</button>
+      </div>
+    </header>
+
+    <div class="filters" id="filters">
+      <label class="field">Ano
+        <select id="fAno"><option value="">Todos</option></select>
+      </label>
+      <label class="field">Mês
+        <select id="fMes"><option value="">Todos</option></select>
+      </label>
+      <label class="field">Status (Corte)
+        <select id="fStatus"><option value="">Todos</option></select>
+      </label>
+      <label class="field">Origem (Costura)
+        <select id="fOrigem"><option value="">Todas</option></select>
+      </label>
+      <label class="field">Buscar pedido
+        <input id="fPedido" type="search" placeholder="Nº pedido" />
+      </label>
+    </div>
+
+    <div id="loading" class="loading">Preparando visualização…</div>
+
+    <section class="page" id="page-resumo">
+      <div class="kpis" id="kpi-resumo"></div>
+      <div class="grid">
+        <div class="card"><h2>Produção no tempo <span>peças · corte</span></h2><div class="chart-box"><canvas id="cTempo"></canvas></div></div>
+        <div class="card"><h2>Status do corte</h2><div class="chart-box"><canvas id="cStatus"></canvas></div></div>
+      </div>
+      <div class="grid">
+        <div class="card"><h2>Mix de origem <span>cortadas · terceiros · estoque</span></h2><div class="chart-box"><canvas id="cMix"></canvas></div></div>
+        <div class="card"><h2>Etapas <span>volume no filtro</span></h2><div class="chart-box"><canvas id="cEtapas"></canvas></div></div>
+      </div>
+    </section>
+
+    <section class="page" id="page-corte">
+      <div class="kpis" id="kpi-corte"></div>
+      <div class="grid">
+        <div class="card"><h2>Lead time <span>dias de corte</span></h2><div class="chart-box"><canvas id="cLead"></canvas></div></div>
+        <div class="card"><h2>Top clientes <span>peças cortadas</span></h2><ul class="rank" id="rankClientes"></ul></div>
+      </div>
+      <div class="card">
+        <h2>Pedidos recentes <span>corte</span></h2>
+        <div class="scroll table-wrap"><table><thead><tr>
+          <th>Data</th><th>Pedido</th><th>Cliente</th><th>Status</th><th>Cortadas</th><th>Terceiros</th><th>Dias</th>
+        </tr></thead><tbody id="tblCorte"></tbody></table></div>
+      </div>
+    </section>
+
+    <section class="page" id="page-revisao">
+      <div class="kpis" id="kpi-revisao"></div>
+      <div class="grid">
+        <div class="card"><h2>Revisão no tempo</h2><div class="chart-box"><canvas id="cRevTempo"></canvas></div></div>
+        <div class="card"><h2>Por responsável</h2><ul class="rank" id="rankRev"></ul></div>
+      </div>
+    </section>
+
+    <section class="page" id="page-costura">
+      <div class="kpis" id="kpi-costura"></div>
+      <div class="grid">
+        <div class="card"><h2>Quem produz mais <span>peças</span></h2><ul class="rank" id="rankCost"></ul></div>
+        <div class="card"><h2>Origem</h2><div class="chart-box"><canvas id="cOrigem"></canvas></div></div>
+      </div>
+      <div class="card">
+        <h2>Detalhe costura</h2>
+        <div class="scroll table-wrap"><table><thead><tr>
+          <th>Data</th><th>Responsável</th><th>Pedido</th><th>Origem</th><th>Peças</th><th>Produto</th>
+        </tr></thead><tbody id="tblCostura"></tbody></table></div>
+      </div>
+    </section>
+
+    <footer id="footer"></footer>
+  </div>
+
+  <script>
+    Chart.register(ChartDataLabels);
+
+    const fmt = new Intl.NumberFormat('pt-BR');
+    const fmtN = (n) => fmt.format(Math.round(Number(n) || 0));
+    const charts = {};
+    let DATA = null;
+    let page = 'resumo';
+    const MIN_YEAR = 2026;
+
+    const MES_NORM = {
+      jan:'Janeiro', janeiro:'Janeiro',
+      fev:'Fevereiro', fevereiro:'Fevereiro',
+      mar:'Março', marco:'Março', 'março':'Março',
+      abr:'Abril', abril:'Abril',
+      mai:'Maio', maio:'Maio',
+      jun:'Junho', junho:'Junho',
+      jul:'Julho', julho:'Julho',
+      ago:'Agosto', agosto:'Agosto',
+      set:'Setembro', setembro:'Setembro',
+      out:'Outubro', outubro:'Outubro',
+      nov:'Novembro', novembro:'Novembro',
+      dez:'Dezembro', dezembro:'Dezembro'
+    };
+    const MES_NUM = {
+      Janeiro:1, Fevereiro:2, 'Março':3, Abril:4, Maio:5, Junho:6,
+      Julho:7, Agosto:8, Setembro:9, Outubro:10, Novembro:11, Dezembro:12
+    };
+
+    function normMes(v) {
+      if (v == null || v === '') return '';
+      const k = String(v).trim().toLowerCase();
+      return MES_NORM[k] || (String(v).charAt(0).toUpperCase() + String(v).slice(1).toLowerCase());
+    }
+    function yearOf(r) {
+      if (r && r.data && /^\d{4}/.test(r.data)) return Number(r.data.slice(0, 4));
+      const a = Number(r && r.ano);
+      return (a >= 2000 && a <= 2100) ? a : null;
+    }
+    function keepFrom2026(r) {
+      const y = yearOf(r);
+      return y != null && y >= MIN_YEAR;
+    }
+    function monthOrder(name) {
+      return MES_NUM[name] || 99;
+    }
+    function ymKey(r) {
+      if (r.data && /^\d{4}-\d{2}/.test(r.data)) return r.data.slice(0, 7);
+      const y = yearOf(r);
+      const m = monthOrder(normMes(r.mes));
+      if (y && m >= 1 && m <= 12) return `${y}-${String(m).padStart(2,'0')}`;
+      return '';
+    }
+    function ymLabel(key) {
+      if (!key || key.length < 7) return key || '—';
+      const [y, m] = key.split('-');
+      const nomes = ['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+      return `${nomes[Number(m)] || m}/${y}`;
+    }
+
+    const themeBtn = document.getElementById('themeBtn');
+    const savedTheme = localStorage.getItem('prod-theme') || 'claro';
+    setTheme(savedTheme);
+    themeBtn.addEventListener('click', () => {
+      setTheme(document.documentElement.getAttribute('data-theme') === 'claro' ? 'escuro' : 'claro');
+    });
+    function setTheme(t) {
+      document.documentElement.setAttribute('data-theme', t);
+      localStorage.setItem('prod-theme', t);
+      themeBtn.textContent = t === 'claro' ? 'Tema: Claro' : 'Tema: Escuro';
+      if (DATA) render();
+    }
+    function ink() {
+      const s = getComputedStyle(document.documentElement);
+      return {
+        c1: s.getPropertyValue('--chart-1').trim(),
+        c2: s.getPropertyValue('--chart-2').trim(),
+        c3: s.getPropertyValue('--chart-3').trim(),
+        c4: s.getPropertyValue('--chart-4').trim(),
+        muted: s.getPropertyValue('--muted').trim(),
+        line: s.getPropertyValue('--line').trim(),
+        ink: s.getPropertyValue('--ink').trim(),
+        bg: s.getPropertyValue('--bg-elev').trim(),
+      };
+    }
+
+    document.getElementById('nav').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-page]');
+      if (!btn) return;
+      page = btn.dataset.page;
+      document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('active', b === btn));
+      document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + page));
+      render();
+    });
+
+    ['fAno','fMes','fStatus','fOrigem','fPedido'].forEach(id => {
+      document.getElementById(id).addEventListener('input', render);
+      document.getElementById(id).addEventListener('change', render);
+    });
+
+    function num(v){ return (v == null || v === '') ? 0 : Number(v) || 0; }
+
+    function filtered() {
+      const ano = document.getElementById('fAno').value;
+      const mes = document.getElementById('fMes').value;
+      const status = document.getElementById('fStatus').value;
+      const origem = document.getElementById('fOrigem').value;
+      const ped = document.getElementById('fPedido').value.trim().toLowerCase();
+
+      const match = (r, extra) => {
+        if (!keepFrom2026(r)) return false;
+        if (ano && String(yearOf(r)) !== ano) return false;
+        if (mes && normMes(r.mes) !== mes) return false;
+        if (ped && !String(r.pedido||'').toLowerCase().includes(ped)) return false;
+        return extra ? extra(r) : true;
+      };
+
+      return {
+        corte: DATA.corte.filter(r => match(r, x => !status || x.status === status)),
+        revisao: DATA.revisao.filter(r => match(r)),
+        costura: DATA.costura.filter(r => match(r, x => !origem || x.origem === origem)),
+      };
+    }
+
+    function labelPlugin(isDonut) {
+      const c = ink();
+      return {
+        datalabels: {
+          color: isDonut ? c.bg : c.ink,
+          backgroundColor: isDonut ? 'transparent' : 'transparent',
+          anchor: isDonut ? 'center' : 'end',
+          align: isDonut ? 'center' : 'top',
+          clamp: true,
+          clip: false,
+          font: { family: 'DM Sans', size: (window.innerWidth < 640 ? 9 : 11), weight: '600' },
+          formatter: (v, ctx) => {
+            if (v == null || v === 0) return '';
+            if (isDonut) {
+              const arr = ctx.chart.data.datasets[0].data;
+              const tot = arr.reduce((a,b)=>a+Number(b||0),0) || 1;
+              return fmtN(v) + '\n' + Math.round(Number(v)/tot*100) + '%';
+            }
+            return fmtN(v);
+          }
+        }
+      };
+    }
+
+    function upsertChart(id, cfg) {
+      if (charts[id]) charts[id].destroy();
+      const ctx = document.getElementById(id);
+      charts[id] = new Chart(ctx, cfg);
+    }
+
+    function baseOpts(extraPlugins) {
+      const c = ink();
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { top: 18, right: 8 } },
+        plugins: Object.assign({
+          legend: { labels: { color: c.muted, boxWidth: 10, font: { family: 'DM Sans' } } },
+          tooltip: { backgroundColor: c.ink, titleColor: '#fff', bodyColor: '#fff' }
+        }, extraPlugins || {}),
+        scales: {
+          x: { ticks: { color: c.muted }, grid: { color: c.line } },
+          y: { ticks: { color: c.muted }, grid: { color: c.line }, beginAtZero: true }
+        }
+      };
+    }
+
+    function kpiHtml(items) {
+      return items.map(i => `<div class="kpi"><div class="lbl">${i.l}</div><div class="val">${i.v}</div>${i.s?`<div class="sub">${i.s}</div>`:''}</div>`).join('');
+    }
+
+    function rankHtml(rows) {
+      const max = rows[0]?.q || 1;
+      return rows.map((r,i) => `
+        <li>
+          <div class="n">${i+1}</div>
+          <div>
+            <div class="name">${r.n || '—'}</div>
+            <div class="bar-wrap"><div class="bar" style="width:${Math.max(4, (r.q/max)*100)}%"></div></div>
+          </div>
+          <div class="qty">${fmtN(r.q)}</div>
+        </li>`).join('') || '<li class="empty">Sem dados no filtro</li>';
+    }
+
+    function groupSum(rows, keyFn, valFn) {
+      const m = new Map();
+      rows.forEach(r => {
+        const k = keyFn(r) || '—';
+        m.set(k, (m.get(k) || 0) + valFn(r));
+      });
+      return [...m.entries()].map(([n,q]) => ({n,q})).sort((a,b)=>b.q-a.q);
+    }
+
+    function render() {
+      if (!DATA) return;
+      const f = filtered();
+      const c = ink();
+      document.getElementById('loading').style.display = 'none';
+
+      const pecasCorte = f.corte.reduce((s,r)=>s+num(r.qtdCortadas),0);
+      const ter = f.corte.reduce((s,r)=>s+num(r.qtdTerceiros),0);
+      const est = f.corte.reduce((s,r)=>s+num(r.qtdEstoque),0);
+      const pecasRev = f.revisao.reduce((s,r)=>s+num(r.qtd),0);
+      const pecasCost = f.costura.reduce((s,r)=>s+num(r.qtd),0);
+      const pedidos = new Set(f.corte.map(r=>r.pedido).filter(Boolean)).size;
+      const dias = f.corte.map(r=>num(r.diasCorte)).filter(x=>x>0);
+      const mediaDias = dias.length ? (dias.reduce((a,b)=>a+b,0)/dias.length) : 0;
+      const cortado = f.corte.filter(r=>r.status==='CORTADO').length;
+
+      document.getElementById('kpi-resumo').innerHTML = kpiHtml([
+        {l:'Peças cortadas', v: fmtN(pecasCorte), s: `${fmtN(pedidos)} pedidos · desde ${MIN_YEAR}`},
+        {l:'Peças revisão', v: fmtN(pecasRev)},
+        {l:'Peças costura', v: fmtN(pecasCost)},
+        {l:'% cortado', v: f.corte.length ? Math.round(cortado/f.corte.length*100)+'%' : '—', s: `${fmtN(cortado)} registros`},
+      ]);
+
+      const byMonth = groupSum(f.corte, r => ymKey(r), r => num(r.qtdCortadas))
+        .filter(x => x.n)
+        .sort((a,b) => a.n.localeCompare(b.n));
+      upsertChart('cTempo', {
+        type: 'line',
+        data: {
+          labels: byMonth.map(x => ymLabel(x.n)),
+          datasets: [{
+            label: 'Peças', data: byMonth.map(x=>x.q),
+            borderColor: c.c1, backgroundColor: 'transparent',
+            tension: .35, pointRadius: 3, borderWidth: 2
+          }]
+        },
+        options: {
+          ...baseOpts(labelPlugin(false)),
+          plugins: {
+            ...baseOpts(labelPlugin(false)).plugins,
+            legend: { display: false },
+            datalabels: { ...labelPlugin(false).datalabels, align: 'top', anchor: 'end' }
+          }
+        }
+      });
+
+      const st = groupSum(f.corte, r => r.status || '—', () => 1);
+      upsertChart('cStatus', {
+        type: 'doughnut',
+        data: {
+          labels: st.map(x=>x.n),
+          datasets: [{ data: st.map(x=>x.q), backgroundColor: [c.c1,c.c2,c.c3,c.c4], borderWidth: 0 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, cutout: '58%',
+          plugins: {
+            legend: { position: 'bottom', labels: { color: c.muted, boxWidth: 10 } },
+            ...labelPlugin(true)
+          }
+        }
+      });
+
+      upsertChart('cMix', {
+        type: 'bar',
+        data: {
+          labels: ['Cortadas', 'Terceiros', 'Estoque'],
+          datasets: [{ data: [pecasCorte, ter, est], backgroundColor: [c.c1,c.c2,c.c3], borderRadius: 8, barThickness: 42 }]
+        },
+        options: {
+          ...baseOpts(labelPlugin(false)),
+          plugins: { legend: { display: false }, ...labelPlugin(false) }
+        }
+      });
+
+      upsertChart('cEtapas', {
+        type: 'bar',
+        data: {
+          labels: ['Corte', 'Revisão', 'Costura'],
+          datasets: [{ data: [pecasCorte, pecasRev, pecasCost], backgroundColor: [c.c1,c.c2,c.c3], borderRadius: 8, barThickness: 42 }]
+        },
+        options: {
+          ...baseOpts(labelPlugin(false)),
+          indexAxis: 'y',
+          plugins: {
+            legend: { display: false },
+            datalabels: { ...labelPlugin(false).datalabels, align: 'right', anchor: 'end' }
+          }
+        }
+      });
+
+      document.getElementById('kpi-corte').innerHTML = kpiHtml([
+        {l:'Peças cortadas', v: fmtN(pecasCorte)},
+        {l:'Terceiros', v: fmtN(ter)},
+        {l:'Estoque', v: fmtN(est)},
+        {l:'Lead time médio', v: mediaDias ? mediaDias.toFixed(1)+' d' : '—'},
+      ]);
+      const buckets = [
+        {n:'0–1 dia', q: dias.filter(d=>d<=1).length},
+        {n:'2–7 dias', q: dias.filter(d=>d>=2 && d<=7).length},
+        {n:'8+ dias', q: dias.filter(d=>d>=8).length},
+      ];
+      upsertChart('cLead', {
+        type: 'bar',
+        data: { labels: buckets.map(b=>b.n), datasets: [{ data: buckets.map(b=>b.q), backgroundColor: c.c1, borderRadius: 8, barThickness: 46 }] },
+        options: {
+          ...baseOpts(labelPlugin(false)),
+          plugins: { legend: { display: false }, ...labelPlugin(false) }
+        }
+      });
+      const topCli = groupSum(f.corte, r => r.cliente || r.responsavel || '—', r => num(r.qtdCortadas)).slice(0,8);
+      document.getElementById('rankClientes').innerHTML = rankHtml(topCli);
+      const rowsC = [...f.corte].filter(r=>r.data).sort((a,b)=> (b.data||'').localeCompare(a.data||'')).slice(0,80);
+      document.getElementById('tblCorte').innerHTML = rowsC.map(r => {
+        const cls = r.status==='CORTADO' ? 'status-ok' : (r.status||'').includes('AGUARD') ? 'status-wait' : 'status-prod';
+        return `<tr>
+          <td>${r.data||'—'}</td><td>${r.pedido||'—'}</td><td>${r.cliente||'—'}</td>
+          <td><span class="pill ${cls}">${r.status||'—'}</span></td>
+          <td>${fmtN(r.qtdCortadas)}</td><td>${fmtN(r.qtdTerceiros)}</td><td>${r.diasCorte ?? '—'}</td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="7">Sem dados</td></tr>';
+
+      document.getElementById('kpi-revisao').innerHTML = kpiHtml([
+        {l:'Peças revisadas', v: fmtN(pecasRev)},
+        {l:'Registros', v: fmtN(f.revisao.length)},
+        {l:'Responsáveis', v: fmtN(new Set(f.revisao.map(r=>r.responsavel).filter(Boolean)).size)},
+      ]);
+      const revM = groupSum(f.revisao, r => ymKey(r), r => num(r.qtd))
+        .filter(x => x.n).sort((a,b)=>a.n.localeCompare(b.n));
+      upsertChart('cRevTempo', {
+        type: 'line',
+        data: { labels: revM.map(x=>ymLabel(x.n)), datasets: [{ data: revM.map(x=>x.q), borderColor: c.c1, tension: .35, pointRadius: 3, borderWidth: 2 }] },
+        options: {
+          ...baseOpts(labelPlugin(false)),
+          plugins: { legend: { display: false }, ...labelPlugin(false) }
+        }
+      });
+      document.getElementById('rankRev').innerHTML = rankHtml(groupSum(f.revisao, r => r.responsavel || '—', r => num(r.qtd)).slice(0,8));
+
+      document.getElementById('kpi-costura').innerHTML = kpiHtml([
+        {l:'Peças costura', v: fmtN(pecasCost)},
+        {l:'Registros', v: fmtN(f.costura.length)},
+        {l:'Responsáveis', v: fmtN(new Set(f.costura.map(r=>r.responsavel).filter(Boolean)).size)},
+        {l:'Origens', v: fmtN(new Set(f.costura.map(r=>r.origem).filter(Boolean)).size)},
+      ]);
+      document.getElementById('rankCost').innerHTML = rankHtml(groupSum(f.costura, r => r.responsavel || '—', r => num(r.qtd)).slice(0,10));
+      const org = groupSum(f.costura, r => r.origem || '—', r => num(r.qtd));
+      upsertChart('cOrigem', {
+        type: 'doughnut',
+        data: { labels: org.map(x=>x.n), datasets: [{ data: org.map(x=>x.q), backgroundColor: [c.c1,c.c2,c.c3,c.c4], borderWidth: 0 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false, cutout: '58%',
+          plugins: {
+            legend: { position: 'bottom', labels: { color: c.muted, boxWidth: 10 } },
+            ...labelPlugin(true)
+          }
+        }
+      });
+      const rowsK = [...f.costura].filter(r=>r.data).sort((a,b)=> (b.data||'').localeCompare(a.data||'')).slice(0,80);
+      document.getElementById('tblCostura').innerHTML = rowsK.map(r => `<tr>
+        <td>${r.data||'—'}</td><td>${r.responsavel||'—'}</td><td>${r.pedido||'—'}</td>
+        <td>${r.origem||'—'}</td><td>${fmtN(r.qtd)}</td><td>${r.produto||'—'}</td>
+      </tr>`).join('') || '<tr><td colspan="6">Sem dados</td></tr>';
+    }
+
+    function fillFilters() {
+      const anos = [...new Set(
+        [...DATA.corte, ...DATA.revisao, ...DATA.costura]
+          .filter(keepFrom2026)
+          .map(yearOf)
+          .filter(Boolean)
+          .map(String)
+      )].sort();
+      const meses = [...new Set(
+        [...DATA.corte, ...DATA.revisao, ...DATA.costura]
+          .filter(keepFrom2026)
+          .map(r => normMes(r.mes))
+          .filter(Boolean)
+      )].sort((a,b) => monthOrder(a) - monthOrder(b));
+      const status = [...new Set(DATA.corte.filter(keepFrom2026).map(r=>r.status).filter(Boolean))].sort();
+      const origem = [...new Set(DATA.costura.filter(keepFrom2026).map(r=>r.origem).filter(Boolean))].sort();
+      const fill = (id, arr) => {
+        const el = document.getElementById(id);
+        while (el.options.length > 1) el.remove(1);
+        arr.forEach(v => {
+          const o = document.createElement('option');
+          o.value = v; o.textContent = v; el.appendChild(o);
+        });
+      };
+      fill('fAno', anos);
+      fill('fMes', meses);
+      fill('fStatus', status);
+      fill('fOrigem', origem);
+      if (anos.includes(String(MIN_YEAR))) document.getElementById('fAno').value = String(MIN_YEAR);
+    }
+
+    fetch('data.json')
+      .then(r => {
+        if (!r.ok) throw new Error('data.json não encontrado');
+        return r.json();
+      })
+      .then(json => {
+        DATA = {
+          ...json,
+          corte: (json.corte || []).filter(keepFrom2026),
+          revisao: (json.revisao || []).filter(keepFrom2026),
+          costura: (json.costura || []).filter(keepFrom2026),
+        };
+        document.getElementById('meta').textContent =
+          `Base: ${json.source || 'Excel'} · só ${MIN_YEAR}+ · atualizado ${json.generatedAt || '—'}`;
+        document.getElementById('footer').textContent =
+          `Corte ${DATA.corte.length} · Revisão ${DATA.revisao.length} · Costura ${DATA.costura.length} · desde ${MIN_YEAR} · sem senha · uso local/rede`;
+        fillFilters();
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-resumo').classList.add('active');
+        render();
+      })
+      .catch(err => {
+        document.getElementById('loading').innerHTML =
+          `Não foi possível carregar os dados.<br><small>${err.message}<br>Use <b>abrir.bat</b> (servidor local) ou rode <b>atualizar-dados.ps1</b>.</small>`;
+      });
+  </script>
+</body>
+</html>
