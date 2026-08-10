@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <base href="/dashboard-producao-fioafio/" />
   <title>Produção · Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -667,7 +668,7 @@
       if (anos.includes(String(MIN_YEAR))) document.getElementById('fAno').value = String(MIN_YEAR);
     }
 
-    fetch('data.json')
+    fetch(new URL('data.json', document.baseURI).toString())
       .then(r => {
         if (!r.ok) throw new Error('data.json não encontrado');
         return r.json();
